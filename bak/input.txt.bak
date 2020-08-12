@@ -1,0 +1,69 @@
+# This file is for user data input
+# Lines with '#' at the beginning will not be read (like this one)
+# Data must be in order (*POINTS, *RULES (**Lines, **Arcs), *CONSTANTS)
+# Lines in *CONSTANTS section must follow the syntax '<CONSTANT_NAME> <value>'
+# Constants can be various types (float, string, tuple,... )
+
+
+*POINTS
+x1 109.7371 118.8635
+y1 150.2601 157.9064
+x2 151.042 160.551
+y2 150.6492 157.6401
+x3 150.0803 161.0649
+y3 124.6148 134.2819
+x4 105.0542 121.9666
+y4 77.3797 89.5325
+x5 123.6836 134.5858
+y5 32.462 45.1735
+x6 309.6504 324.3265
+y6 21.4905 30.1511
+x7 315.1133 331.7461
+y7 9.0758 14.9427
+x8 55.5597 65.4835
+y8 6.2724 17.168
+x9 61.1742 73.7537
+y9 21.5564 30.9154
+x10 105.359 114.8635
+y10 24.6017 36.7545
+x11 76.3295 92.3964
+y11 60.8814 71.6954
+x12 107.6168 121.9896
+y12 132.0045 139.2139
+
+*RULES
+**Lines
+1 2
+2 3
+5 6
+6 7
+7 8
+8 9
+9 10
+12 1
+**Arcs
+3 4 5
+10 11 12
+
+
+*CONSTANTS
+LOAD_MAGNITUDE 13.E5
+ELEMENT_SEED_SIZE 12.0
+
+# Young's modulus and Poisson's Ratio
+YOUNGS_MODULUS 2.41E3
+POISSONS_RATIO 0.4
+
+OUTPUT_VARIABLE ELEDEN
+
+# Genetic algorithm
+GENERATION_SIZE 3
+POPULATION_SIZE 5
+SELECTION_RATE 0.5
+MUTATION_RATE 0.6
+some_list [[1, 2, 3], [4, 5, 6]]
+some_string abc
+some_hard_list ['.dat', '.env', '.inp', '.ipm', '.lck', '.log', '.com', '.msg', '.prt', '.sim', '.sta', '.rec', '.pyc', '.odb']
+
+# Temporary constant
+DEPTH 50.0
