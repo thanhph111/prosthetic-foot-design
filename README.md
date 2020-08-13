@@ -41,3 +41,4 @@ prosthetic-foot-design
         ├───recheck.py
         └───virtualkernel.py
 ```
+![Demo](./asset/demo.gif)

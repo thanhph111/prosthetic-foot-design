@@ -3,6 +3,7 @@
 
 # Standard modules
 import os
+import sys
 import random
 import copy
 import subprocess
@@ -34,6 +35,18 @@ CONSTANTS = [
     AMP_FACT,
     CONSTRAINT_EXPRESSIONS,
 ]
+
+
+COLORS = {
+    "HEADER": "\033[95m",
+    "OKBLUE": "\033[94m",
+    "OKGREEN": "\033[92m",
+    "WARNING": "\033[93m",
+    "FAIL": "\033[91m",
+    "ENDC": "\033[0m",
+    "BOLD": "\033[1m",
+    "UNDERLINE": "\033[4m",
+}
 
 
 class Chromosome:
@@ -89,6 +102,14 @@ def chunker(seq, size):
     return list(seq[pos : pos + size] for pos in range(0, len(seq), size))
 
 
+def clear_line(number_of_lines=1):
+    CURSOR_UP_ONE = "\x1b[1A"
+    ERASE_LINE = "\x1b[2K"
+    for _ in range(number_of_lines):
+        sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.write(ERASE_LINE)
+
+
 def logging():
     """Log current data to a file"""
 
@@ -142,6 +163,8 @@ def need_initialize():
     else:
         print("Old data is not found. Initialize new data.")
         answer = True
+    # time.sleep(1)
+    clear_line()
     return answer
 
 
@@ -151,8 +174,8 @@ def call(genes):
 
     points = Chromosome.genes_to_points(genes)
     output = subprocess.check_output(
-        # "py test/virtualkernel.py -- %s" % (points),
-        "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
+        "py test/virtualkernel.py -- %s" % (points),
+        # "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
         shell=True,
         universal_newlines=True,
     )
@@ -193,11 +216,12 @@ def singletask():
         result = call(chromosome.genes)
         chromosome.objective = result["objective"]
         chromosome.constraints = penalty(chromosome.genes)  # TODO: Temporary
-        print(result)
+        # print(result)
         print(
             "Done with chromosome %s, generation %s."
             % (order * CORE_SIZE + len(item) - 1, len(data))
         )
+        clear_line()
 
 
 def multitask():
@@ -216,17 +240,27 @@ def multitask():
                 with concurrent.futures.ProcessPoolExecutor() as executor:
                     output = executor.map(call, item)
                     for index, result in enumerate(output):
-                        print(index, result)
+                        # print(index, result)
                         temp.append(result)
             except Exception:
                 small_bool = False
                 big_bool += 1
             if small_bool:
                 results.extend(temp)
+
+                print(COLORS["OKGREEN"], end="")
+                print("COMPLETED:")
                 print(
-                    "Done with chromosome %s, generation %s."
-                    % (order * CORE_SIZE + len(item), len(data) + 1)
+                    f"{'Generation:':<15}{len(data) + 1:03}"
+                    f"{'/'}{GENERATION_SIZE:03}"
                 )
+                print(
+                    f"{'Chromosome:':<15}{order * CORE_SIZE + len(item):03}"
+                    f"{'/'}{POPULATION_SIZE:03}"
+                )
+                print(COLORS["ENDC"], end="")
+
+                clear_line(3)
                 break
             if big_bool == RETRY_COUNT:
                 print("Failed too many times")
@@ -238,6 +272,7 @@ def multitask():
 
 
 def self_recover():
+    print(COLORS["WARNING"], end="")
     print("Taking a break.")
     print("Sleep", TIME_SLEEP, "second.")
     time.sleep(2 * TIME_SLEEP / 3)
@@ -245,6 +280,9 @@ def self_recover():
     remove_unnecessary_files()
     time.sleep(TIME_SLEEP / 3)
     print("Continue...")
+    print(COLORS["ENDC"], end="")
+    time.sleep(1)
+    clear_line(4)
 
 
 def initialization():
@@ -294,7 +332,7 @@ def fitness():
     # Add that generation to data
     copied_population = copy.deepcopy(population)
     data.append(copied_population)
-    print("Done with generation", len(data))
+    # print("Done with generation", len(data))
 
     # Logging if needed
     if IS_LOGGING:
@@ -415,11 +453,17 @@ if __name__ == "__main__":
     index, objective, genes, constraints = genetic_algorithm()
     stop = timeit.default_timer()
 
-    print("Maximum objective:", objective)
-    print("Its index:", index)
-    print("Its genes:", genes)
-    print("Its constraints:", constraints)
-    print("Running time: %.2f" % (stop - start))
+    print()
+    print(COLORS["HEADER"] + "RESULT:" + COLORS["ENDC"])
+    # print(COLORS["OKBLUE"], end="")
+    print(f"{'  Maximum objective:':<20}{objective:>12.3f}")
+    print(f"{'  Its index:':<20}{index:>12}")
+    print(f"{'  Its constraints:':<20}{str(constraints):>12}")
+    print(f"{'  Running time:':<20}{(stop - start):>12.2f}")
+    # print("Its genes:")
+    # print(beautifier(genes))
+    # print(COLORS["ENDC"], end="")
+    print()
 
-    values = [population[0].objective for population in data]
-    plot.main(values, is_animation=False)
+    # values = [population[0].objective for population in data]
+    # plot.main(values, is_animation=False)
