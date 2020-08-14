@@ -9,18 +9,14 @@ import matplotlib.pyplot as pyplot
 from datetime import datetime
 
 # User library
-from sub.inputprocess import IS_ANIMATION
-from sub.inputprocess import OUTPUT_FILE
-from sub.inputprocess import ICON_FILE
-from sub.inputprocess import PHOTO_TYPE
-from sub.inputprocess import OUTPUT_PHOTO_DIRECTORY
+from sub.inputprocess import CONSTANTS as CONS
 
 
 # **json.loads(json_data)
 def get_data():
     """Read output file to get data."""
     try:
-        with open(OUTPUT_FILE, "r") as file:
+        with open(CONS["OUTPUT_FILE"], "r") as file:
             data = json.load(file)[1]
         return data
     except FileNotFoundError:
@@ -64,7 +60,12 @@ def main(values, is_animation=False):
             # Remove left title, then save image
             pyplot.title("", loc="left", pad=20)
             fig.savefig(
-                "%s%s%s" % (OUTPUT_PHOTO_DIRECTORY, plot_name, PHOTO_TYPE),
+                "%s%s%s"
+                % (
+                    CONS["OUTPUT_PHOTO_DIRECTORY"],
+                    plot_name,
+                    CONS["PHOTO_TYPE"],
+                ),
                 transparent=False,
                 dpi=300,
             )
@@ -123,7 +124,7 @@ def main(values, is_animation=False):
 
     # Set icon
     manager = pyplot.get_current_fig_manager()
-    manager.window.wm_iconbitmap(ICON_FILE)
+    manager.window.wm_iconbitmap(CONS["ICON_FILE"])
 
     # Disable some borders
     subplot = fig.add_subplot(111, frameon=True)
@@ -159,4 +160,4 @@ def main(values, is_animation=False):
 if __name__ == "__main__":
     __package__ = "inputprocess"
     objectives = get_objectives(get_data())
-    main(objectives, is_animation=IS_ANIMATION)
+    main(objectives, is_animation=CONS["IS_ANIMATION"])

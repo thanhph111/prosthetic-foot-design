@@ -15,25 +15,24 @@ import concurrent.futures
 
 # User modules
 import sub.plot as plot
-from sub.inputprocess import *
+from sub.inputprocess import DOMAINS
+from sub.inputprocess import CONSTRAINTS
+from sub.inputprocess import CONSTANTS as CONS
 
 
-DOMAINS = create_domains()
-CONSTRAINT_EXPRESSIONS = create_constraints()
 CHROMOSOME_SIZE = len(DOMAINS)
-
 CONSTANTS = [
     DOMAINS,
-    GENERATION_SIZE,
-    POPULATION_SIZE,
+    CONSTRAINTS,
     CHROMOSOME_SIZE,
-    SELECTION_RATE,
-    CAL_MODE,
-    MUTATION_MODE,
-    MAJOR_MUTATION_RATE,
-    MINOR_MUTATION_RATE,
-    AMP_FACT,
-    CONSTRAINT_EXPRESSIONS,
+    CONS["GENERATION_SIZE"],
+    CONS["POPULATION_SIZE"],
+    CONS["SELECTION_RATE"],
+    CONS["CALCULATE_MODE"],
+    CONS["MUTATION_MODE"],
+    CONS["MAJOR_MUTATION_RATE"],
+    CONS["MINOR_MUTATION_RATE"],
+    CONS["AMP_FACT"],
 ]
 
 
@@ -84,7 +83,7 @@ class Chromosome:
 
 def remove_unnecessary_files():
     """Delete unused files. Return nothing"""
-    for type in UNUSED_FILES:
+    for type in CONS["UNUSED_FILES"]:
         for file in glob.glob("*" + type):
             try:
                 os.remove(file)
@@ -116,14 +115,14 @@ def logging():
     global data
 
     object_to_dump = [CONSTANTS, data]
-    with open(OUTPUT_FILE, "w") as file:
+    with open(CONS["OUTPUT_FILE"], "w") as file:
         json.dump(object_to_dump, file, default=lambda x: x.__dict__, indent=2)
 
 
 def is_data_match():
     """Check if previous data is suitable to join with current data."""
 
-    with open(OUTPUT_FILE, "r") as file:
+    with open(CONS["OUTPUT_FILE"], "r") as file:
         old_constants = json.load(file)[0]
     if old_constants == CONSTANTS:
         return True
@@ -136,7 +135,7 @@ def loading():
     global data
     global population
 
-    with open(OUTPUT_FILE, "r") as file:
+    with open(CONS["OUTPUT_FILE"], "r") as file:
         old_data = json.load(file)[1]
 
     for old_population in old_data:
@@ -152,7 +151,7 @@ def loading():
 def need_initialize():
     """Check if population initialization is needed."""
 
-    if IS_LOADING and os.path.exists(OUTPUT_FILE):
+    if CONS["IS_LOADING"] and os.path.exists(CONS["OUTPUT_FILE"]):
         if is_data_match():
             print("Old data is valid. Reuse")
             answer = False
@@ -174,8 +173,8 @@ def call(genes):
 
     points = Chromosome.genes_to_points(genes)
     output = subprocess.check_output(
-        "py test/virtualkernel.py -- %s" % (points),
-        # "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
+        # "py test/virtualkernel.py -- %s" % (points),
+        "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
         shell=True,
         universal_newlines=True,
     )
@@ -193,11 +192,11 @@ def penalty(genes):
         globals()["y" + str(index)] = y_coordinate
     # globals()["p"] = polygon_perimeter(genes)
 
-    for expressions in CONSTRAINT_EXPRESSIONS:
+    for expressions in CONSTRAINTS:
         if eval(expressions):
             constraints.append(0)
         else:
-            for operator in OPERATORS:
+            for operator in CONS["OPERATORS"]:
                 if operator in expressions:
                     splited_exp = [
                         eval(element)  # TODO: Security breach, need to fix
@@ -218,8 +217,7 @@ def singletask():
         chromosome.constraints = penalty(chromosome.genes)  # TODO: Temporary
         # print(result)
         print(
-            "Done with chromosome %s, generation %s."
-            % (order * CORE_SIZE + len(item) - 1, len(data))
+            "Done with chromosome %s, generation %s." % (order + 1, len(data))
         )
         clear_line()
 
@@ -229,7 +227,7 @@ def multitask():
 
     global population
     input = [chromosome.genes for chromosome in population]
-    items = chunker(input, CORE_SIZE)
+    items = chunker(input, CONS["CORE_SIZE"])
     results = []
     for order, item in enumerate(items):
         big_bool = 0
@@ -251,18 +249,20 @@ def multitask():
                 print(COLORS["OKGREEN"], end="")
                 print("COMPLETED:")
                 print(
-                    f"{'Generation:':<15}{len(data) + 1:03}"
-                    f"{'/'}{GENERATION_SIZE:03}"
+                    f"{'Generation:':<15}"
+                    f"{len(data) + 1:03}"
+                    f"{'/'}{CONS['GENERATION_SIZE']:03}"
                 )
                 print(
-                    f"{'Chromosome:':<15}{order * CORE_SIZE + len(item):03}"
-                    f"{'/'}{POPULATION_SIZE:03}"
+                    f"{'Chromosome:':<15}"
+                    f"{order * CONS['CORE_SIZE'] + len(item):03}"
+                    f"{'/'}{CONS['POPULATION_SIZE']:03}"
                 )
                 print(COLORS["ENDC"], end="")
 
                 clear_line(3)
                 break
-            if big_bool == RETRY_COUNT:
+            if big_bool == CONS["RETRY_COUNT"]:
                 print("Failed too many times")
                 print(item)
                 exit()
@@ -274,11 +274,11 @@ def multitask():
 def self_recover():
     print(COLORS["WARNING"], end="")
     print("Taking a break.")
-    print("Sleep", TIME_SLEEP, "second.")
-    time.sleep(2 * TIME_SLEEP / 3)
+    print("Sleep", CONS["TIME_SLEEP"], "second.")
+    time.sleep(2 * CONS["TIME_SLEEP"] / 3)
     print("Remove all unused files.")
     remove_unnecessary_files()
-    time.sleep(TIME_SLEEP / 3)
+    time.sleep(CONS["TIME_SLEEP"] / 3)
     print("Continue...")
     print(COLORS["ENDC"], end="")
     time.sleep(1)
@@ -287,7 +287,7 @@ def self_recover():
 
 def initialization():
     global population
-    population = [Chromosome() for _ in range(POPULATION_SIZE)]
+    population = [Chromosome() for _ in range(CONS["POPULATION_SIZE"])]
 
 
 def fitness():
@@ -295,9 +295,9 @@ def fitness():
     global population
 
     # Calculate objectives and constraints of all chromosomes
-    if CAL_MODE == "MULTITASK":
+    if CONS["CALCULATE_MODE"] == "MULTITASK":
         multitask()
-    elif CAL_MODE == "SINGLETASK":
+    elif CONS["CALCULATE_MODE"] == "SINGLETASK":
         singletask()
     else:
         print("Invalid calculation mode")
@@ -312,7 +312,7 @@ def fitness():
 
     # Calculate every fitnesses
     for chromosome in population:
-        chromosome.fitness = chromosome.objective - AMP_FACT * abs(
+        chromosome.fitness = chromosome.objective - CONS["AMP_FACT"] * abs(
             chromosome.objective - min_objective
         ) * sum(chromosome.constraints)
 
@@ -335,20 +335,20 @@ def fitness():
     # print("Done with generation", len(data))
 
     # Logging if needed
-    if IS_LOGGING:
+    if CONS["IS_LOGGING"]:
         logging()
 
 
 def selection():
     global population
-    population = population[: int(SELECTION_RATE * len(population))]
+    population = population[: int(CONS["SELECTION_RATE"] * len(population))]
 
 
 def crossover():
     global population
     children = []
 
-    for _ in range(POPULATION_SIZE - len(population)):
+    for _ in range(CONS["POPULATION_SIZE"] - len(population)):
         child = Chromosome()
         # Select parents based on their fitnesses
         [parent_1, parent_2] = random.choices(
@@ -378,11 +378,11 @@ def crossover():
 def mutation():
     global population
 
-    if MUTATION_MODE == "UNION":
+    if CONS["MUTATION_MODE"] == "UNION":
         # Major mutation
         major_indexes = random.sample(
-            population=range(POPULATION_SIZE),
-            k=int(MAJOR_MUTATION_RATE * POPULATION_SIZE),
+            population=range(CONS["POPULATION_SIZE"]),
+            k=int(CONS["MAJOR_MUTATION_RATE"] * CONS["POPULATION_SIZE"]),
         )
         for major_index in major_indexes:
             population[major_index].genes = Chromosome.domains_to_genes()
@@ -390,22 +390,22 @@ def mutation():
         for chromosome in population:
             minor_indexes = random.sample(
                 population=range(CHROMOSOME_SIZE),
-                k=int(MINOR_MUTATION_RATE * CHROMOSOME_SIZE),
+                k=int(CONS["MINOR_MUTATION_RATE"] * CHROMOSOME_SIZE),
             )
             for minor_index in minor_indexes:
                 chromosome.genes[minor_index] = random.uniform(
                     DOMAINS[minor_index][0], DOMAINS[minor_index][1]
                 )
 
-    elif MUTATION_MODE == "INTERSECT":
+    elif CONS["MUTATION_MODE"] == "INTERSECT":
         major_indexes = random.sample(
-            population=range(POPULATION_SIZE),
-            k=int(MAJOR_MUTATION_RATE * POPULATION_SIZE),
+            population=range(CONS["POPULATION_SIZE"]),
+            k=int(CONS["MAJOR_MUTATION_RATE"] * CONS["POPULATION_SIZE"]),
         )
         for major_index in major_indexes:
             minor_indexes = random.sample(
                 population=range(CHROMOSOME_SIZE),
-                k=int(MINOR_MUTATION_RATE * CHROMOSOME_SIZE),
+                k=int(CONS["MINOR_MUTATION_RATE"] * CHROMOSOME_SIZE),
             )
             for minor_index in minor_indexes:
                 population[major_index].genes[minor_index] = random.uniform(
@@ -428,13 +428,13 @@ def genetic_algorithm():
         initialization()
         fitness()
 
-    while len(data) < GENERATION_SIZE:
+    while len(data) < CONS["GENERATION_SIZE"]:
         selection()
         crossover()
         mutation()
         fitness()
 
-        if len(data) % REST_PERIOR == 0:
+        if len(data) % CONS["REST_PERIOR"] == 0:
             self_recover()
 
     objectives = [population[0].objective for population in data]
@@ -465,5 +465,5 @@ if __name__ == "__main__":
     # print(COLORS["ENDC"], end="")
     print()
 
-    # values = [population[0].objective for population in data]
-    # plot.main(values, is_animation=False)
+    values = [population[0].objective for population in data]
+    plot.main(values, is_animation=False)

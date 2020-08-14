@@ -1,20 +1,23 @@
-# Flake8: noqa
 """This is kernel file that uses abaqus kernel for modeling and analyse jobs.
 You should not modify this.
 """
-# from __future__ import print_function
+
+# Import new print function from python 3
+from __future__ import print_function
+
 # Abaqus related modules
-from abaqus import *
-from abaqusConstants import *
-import part
-import sketch
-import material
-import section
-import assembly
-import step
-import load
-import job
-import mesh
+import abaqus as ABQ
+import abaqusConstants as ABC
+
+import part  # noqa: F401
+import sketch  # noqa: F401
+import material  # noqa: F401
+import section  # noqa: F401
+import assembly  # noqa: F401
+import step  # noqa: F401
+import load  # noqa: F401
+import job  # noqa: F401
+import mesh  # noqa: F401
 import odbAccess
 
 # Standard modules
@@ -25,20 +28,25 @@ import ast
 import random
 
 # Other modules
-from sub.inputprocess import *
+from sub.inputprocess import RULES as RULES
+from sub.inputprocess import CONSTANTS as CONS
+
+# Convert list of unicode string to tuple of bare string
+OUTPUT_VARIABLE_TUPLE = tuple(
+    index.encode("ascii", "ignore") for index in CONS["OUTPUT_VARIABLE"]
+)
 
 
 def _print_(string):
     """Print a string to command prompt if running scrip within abaqus cae.
     Return nothing
     """
-    print >>sys.__stdout__, string
-    # print(string, file=sys.__stdout__)
+    print(string, file=sys.__stdout__)
 
 
 def remove_unnecessary_files(file_name):
     """Delete unused files. Return nothing"""
-    for type in UNUSED_FILES:
+    for type in CONS["UNUSED_FILES"]:
         if os.path.isfile(file_name + type):
             try:
                 os.remove(file_name + type)
@@ -46,148 +54,209 @@ def remove_unnecessary_files(file_name):
                 pass
 
 
-# def coordinates_to_points(coordinates):
-#     """Merge coordinates list to points list. Rerurn 2-dim array"""
-#     points = []
-#     for index in range(0, len(coordinates), 2):
-#         x_coordinate = coordinates[index]
-#         y_coordinate = coordinates[index + 1]
-#         points.append([x_coordinate, y_coordinate])
-#     return points
-
-
-def finite_element_analysis(points, print_photo=PHOTO_MODE):
+def finite_element_analysis(
+    points, is_planar=CONS["PLANAR_MODE"], print_photo=CONS["PHOTO_MODE"]
+):
     model_name = "Model" + "_" + str(random.random())[2:]
 
     # Create a models
-    my_model = mdb.Model(name=model_name)
+    my_model = ABQ.mdb.Model(name=model_name)
 
     # Create a part
-    rules_dict = create_rules()
     my_sketch = my_model.ConstrainedSketch(name="Profile", sheetSize=300.0)
     # Create lines by 2 points
-    for index in rules_dict["Lines"]:
+    for index in RULES["Lines"]:
         my_sketch.Line(
             point1=points[index[0] - 1], point2=points[index[1] - 1]
         )
     # Create arcs by 3 points
-    for index in rules_dict["Arcs"]:
+    for index in RULES["Arcs"]:
         my_sketch.Arc3Points(
             point1=points[index[0] - 1],
             point2=points[index[2] - 1],
             point3=points[index[1] - 1],
         )
-    # Create 3D part by extrusion
-    my_part = my_model.Part(
-        name="FootPart", dimensionality=THREE_D, type=DEFORMABLE_BODY
-    )
-    my_part.BaseSolidExtrude(sketch=my_sketch, depth=DEPTH)
+    # Create part
+    if is_planar:
+        my_part = my_model.Part(
+            name="FootPart",
+            dimensionality=ABC.TWO_D_PLANAR,
+            type=ABC.DEFORMABLE_BODY,
+        )
+        my_part.BaseShell(sketch=my_sketch)
+    else:
+        my_part = my_model.Part(
+            name="FootPart",
+            dimensionality=ABC.THREE_D,
+            type=ABC.DEFORMABLE_BODY,
+        )
+        my_part.BaseSolidExtrude(sketch=my_sketch, depth=CONS["DEPTH"])
 
     # Create a material
     my_material = my_model.Material(name="POM")
-    my_material.Elastic(table=((YOUNGS_MODULUS, POISSONS_RATIO),))
+    my_material.Elastic(
+        table=((CONS["YOUNGS_MODULUS"], CONS["POISSONS_RATIO"]),)
+    )
 
     # Create section
-    my_model.HomogeneousSolidSection(
-        name="FootSection", material="POM", thickness=1.0
-    )
-    my_part.SectionAssignment(
-        region=(my_part.cells,), sectionName="FootSection"
-    )
+    if is_planar:
+        my_model.HomogeneousSolidSection(
+            name="FootSection", material="POM", thickness=None
+        )
+        my_part.SectionAssignment(
+            region=(my_part.faces,), sectionName="FootSection"
+        )
+    else:
+        my_model.HomogeneousSolidSection(
+            name="FootSection", material="POM", thickness=1.0
+        )
+        my_part.SectionAssignment(
+            region=(my_part.cells,), sectionName="FootSection"
+        )
 
     # Create an instance
     my_assembly = my_model.rootAssembly
     my_instance = my_assembly.Instance(
-        name="FootInstance", part=my_part, dependent=OFF
+        name="FootInstance", part=my_part, dependent=ABC.OFF
     )
 
     # Create a step
-    my_step = my_model.StaticStep(
+    my_model.StaticStep(
         name="LoadStep",
         previous="Initial",
         timePeriod=1.0,
         initialInc=0.1,
         description="Weight of patient",
     )
-    my_step.setValues(initialInc=1.0)
+
+    # Create track point
+    vertices = my_instance.vertices
+    track_point = vertices.findAt((tuple(points[1] + [0]),))
+    my_assembly.Set(vertices=track_point, name="TrackPoint")
+
     # Create field output request and set one frame only
     my_field_request = my_model.fieldOutputRequests["F-Output-1"]
-    my_field_request.setValues(variables=(OUTPUT_VARIABLE,))
-    del my_model.historyOutputRequests["H-Output-1"]
+    my_field_request.setValues(variables=OUTPUT_VARIABLE_TUPLE)
 
-    # Fix face and apply load
-    fixed_face_center = (
-        (points[6][0] + points[7][0]) / 2,
-        (points[6][1] + points[7][1]) / 2,
-        DEPTH / 2,
+    my_history_request = my_model.historyOutputRequests["H-Output-1"]
+    my_history_request.setValues(
+        variables=("U1", "U2", "U3", "UR1", "UR2", "UR3"),
+        region=my_assembly.sets["TrackPoint"],
     )
-    loaded_face_center = (
-        (points[0][0] + points[1][0]) / 2,
-        (points[0][1] + points[1][1]) / 2,
-        DEPTH / 2,
-    )
-    # Fix face
-    fixed_face = my_instance.faces.findAt((fixed_face_center,))
-    my_model.EncastreBC(
-        name="Fixed", createStepName="LoadStep", region=(fixed_face,)
-    )
-    # Apply load
-    loaded_face = my_instance.faces.findAt((loaded_face_center,))
-    my_model.Pressure(
-        name="Loaded",
-        createStepName="LoadStep",
-        region=((loaded_face, SIDE1),),
-        magnitude=LOAD_MAGNITUDE,
-    )
+
+    if is_planar:
+        # Fix face and apply load
+        fixed_edge_center = (
+            (points[6][0] + points[7][0]) / 2,
+            (points[6][1] + points[7][1]) / 2,
+            0,
+        )
+        loaded_edge_center = (
+            (points[0][0] + points[1][0]) / 2,
+            (points[0][1] + points[1][1]) / 2,
+            0,
+        )
+        # Fix face
+        fixed_edge = my_instance.edges.findAt((fixed_edge_center,))
+        my_model.EncastreBC(
+            name="Fixed", createStepName="LoadStep", region=(fixed_edge,)
+        )
+        # Apply load
+        loaded_edge = my_instance.edges.findAt((loaded_edge_center,))
+        my_model.Pressure(
+            name="Loaded",
+            createStepName="LoadStep",
+            region=((loaded_edge, ABC.SIDE1),),
+            magnitude=CONS["LOAD_MAGNITUDE"],
+        )
+    else:
+        # Fix face and apply load
+        fixed_face_center = (
+            (points[6][0] + points[7][0]) / 2,
+            (points[6][1] + points[7][1]) / 2,
+            CONS["DEPTH"] / 2,
+        )
+        loaded_face_center = (
+            (points[0][0] + points[1][0]) / 2,
+            (points[0][1] + points[1][1]) / 2,
+            CONS["DEPTH"] / 2,
+        )
+        # Fix face
+        fixed_face = my_instance.faces.findAt((fixed_face_center,))
+        my_model.EncastreBC(
+            name="Fixed", createStepName="LoadStep", region=(fixed_face,)
+        )
+        # Apply load
+        loaded_face = my_instance.faces.findAt((loaded_face_center,))
+        my_model.Pressure(
+            name="Loaded",
+            createStepName="LoadStep",
+            region=((loaded_face, ABC.SIDE1),),
+            magnitude=CONS["LOAD_MAGNITUDE"],
+        )
 
     # Mesh the instance
-    my_element_type = mesh.ElemType(elemCode=C3D8I, elemLibrary=STANDARD)
-    my_assembly.setElementType(
-        regions=(my_instance.cells,), elemTypes=(my_element_type,)
-    )
     my_assembly.seedPartInstance(
-        regions=(my_instance,), size=ELEMENT_SEED_SIZE
+        regions=(my_instance,), size=CONS["ELEMENT_SEED_SIZE"]
     )
     my_assembly.generateMesh(regions=(my_instance,))
 
     # Create and submit job
     job_name = model_name
-    my_job = mdb.Job(
+    my_job = ABQ.mdb.Job(
         name=job_name, model=model_name, description="Foot design"
     )
     my_job.submit()
     my_job.waitForCompletion()
 
-    # Read the ESEDEN result
+    # Read the field output
     my_odb = odbAccess.openOdb(path=job_name + ".odb")
-    my_last_frame = my_odb.steps["LoadStep"].frames[-1]
-    total_energy_density = my_last_frame.fieldOutputs["ESEDEN"]
-    elements_data = []
-    for index in total_energy_density.values:
-        elements_data.append(index.data)
+    last_step = my_odb.steps["LoadStep"]
+    last_frame = last_step.frames[-1]
+    field_outputs = last_frame.fieldOutputs["S"]
+    field_output = max(
+        [getattr(value, "mises") for value in field_outputs.values]
+    )
 
+    # Read the history output
+    history_region_name = last_step.historyRegions.keys()[0]
+    history_region = last_step.historyRegions[history_region_name]
+    history_output = [
+        value.data[-1][-1]
+        for value in history_region.historyOutputs.values()[:2]
+    ]
+
+    if is_planar:
+        # Get the area
+        objective = my_part.getArea(faces=my_part.faces)
+    else:
+        objective = my_part.getVolume(cells=my_part.cells)
+
+    # Print result photo, just for Mises
     if print_photo:
         # View the result (not working with noGUI)
         my_odb = visualization.openOdb(path=job_name + ".odb")
-        my_viewport = session.viewports["Viewport: 1"]
+        my_viewport = ABQ.session.viewports["Viewport: 1"]
         my_viewport.setValues(displayedObject=my_odb)
         my_viewport.view.fitView()
-        my_viewport.odbDisplay.display.setValues(plotState=CONTOURS_ON_DEF)
+        my_viewport.odbDisplay.display.setValues(plotState=ABC.CONTOURS_ON_DEF)
         my_viewport.odbDisplay.setPrimaryVariable(
-            variableLabel="ESEDEN", outputPosition=WHOLE_ELEMENT
+            variableLabel="S",
+            outputPosition=ABC.INTEGRATION_POINT,
+            refinement=(ABC.INVARIANT, "Mises"),
         )
-        my_viewport.odbDisplay.commonOptions.setValues(renderStyle=FILLED)
+        my_viewport.odbDisplay.commonOptions.setValues(renderStyle=ABC.FILLED)
 
         # Export image
         my_viewport.view.pan(xFraction=0.1)
-        session.defaultViewportAnnotationOptions.setValues(
-            title=OFF, state=OFF, triad=OFF
+        ABQ.session.defaultViewportAnnotationOptions.setValues(
+            title=ABC.OFF, state=ABC.OFF, triad=ABC.OFF
         )
-        session.printOptions.setValues(
-            rendition=COLOR, vpDecorations=OFF, vpBackground=OFF
+        ABQ.session.printOptions.setValues(
+            rendition=ABC.COLOR, vpDecorations=ABC.OFF, vpBackground=ABC.OFF
         )
-        session.printToFile(
-            fileName=job_name, format=PNG, canvasObjects=(my_viewport,)
+        ABQ.session.printToFile(
+            fileName=job_name, format=ABC.PNG, canvasObjects=(my_viewport,)
         )
 
     # Close output database and delete the model
@@ -197,7 +266,11 @@ def finite_element_analysis(points, print_photo=PHOTO_MODE):
     # Delete unnecessary files
     remove_unnecessary_files(job_name)
 
-    return {"objective": max(elements_data)}
+    return {
+        "objective": objective,
+        "field_output": field_output,
+        "history_output": history_output,
+    }
 
 
 if __name__ == "__main__":
@@ -222,4 +295,5 @@ if __name__ == "__main__":
             [83.1338504234908, 71.65940041608457],
             [116.8888742298014, 135.3959448675419],
         ]
+
     _print_(finite_element_analysis(points))

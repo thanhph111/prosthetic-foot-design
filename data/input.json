@@ -1,0 +1,222 @@
+// This file is for user data input
+// Lines with '#' at the beginning will not be read (like this one)
+// Data must be in order (*POINTS, *RULES (**Lines, **Arcs), *CONSTANTS)
+// Lines in *CONSTANTS section must follow the syntax '<CONSTANT_NAME> <value>'
+// Constants can be various types (float, string, tuple,... )
+// Collected from: https://www.engineeringtoolbox.com/young-modulus-d_417.html
+{
+    "DOMAINS": [
+        [
+            109.7371,
+            118.8635
+        ],
+        [
+            150.2601,
+            157.9064
+        ],
+        [
+            151.042,
+            160.551
+        ],
+        [
+            150.6492,
+            157.6401
+        ],
+        [
+            150.0803,
+            161.0649
+        ],
+        [
+            124.6148,
+            134.2819
+        ],
+        [
+            105.0542,
+            121.9666
+        ],
+        [
+            77.3797,
+            89.5325
+        ],
+        [
+            123.6836,
+            134.5858
+        ],
+        [
+            32.462,
+            45.1735
+        ],
+        [
+            309.6504,
+            324.3265
+        ],
+        [
+            21.4905,
+            30.1511
+        ],
+        [
+            315.1133,
+            331.7461
+        ],
+        [
+            9.0758,
+            14.9427
+        ],
+        [
+            55.5597,
+            65.4835
+        ],
+        [
+            6.2724,
+            17.168
+        ],
+        [
+            61.1742,
+            73.7537
+        ],
+        [
+            21.5564,
+            30.9154
+        ],
+        [
+            105.359,
+            114.8635
+        ],
+        [
+            24.6017,
+            36.7545
+        ],
+        [
+            76.3295,
+            92.3964
+        ],
+        [
+            60.8814,
+            71.6954
+        ],
+        [
+            107.6168,
+            121.9896
+        ],
+        [
+            132.0045,
+            139.2139
+        ]
+    ],
+    "RULES": {
+        "Lines": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ],
+            [
+                8,
+                9
+            ],
+            [
+                9,
+                10
+            ],
+            [
+                12,
+                1
+            ]
+        ],
+        "Arcs": [
+            [
+                3,
+                4,
+                5
+            ],
+            [
+                10,
+                11,
+                12
+            ]
+        ]
+    },
+    "CONSTRAINTS": [
+        "x1 - x0 > 40",
+        "((x2 - x1)**2 + (y2 - y1)**2)**(1/2) < 50"
+    ],
+    "CONSTANTS": {
+        // Abaqus
+        "PLANAR_MODE": true,
+        "PHOTO_MODE": true,
+        "PHOTO_TYPE": ".png",
+        "LOAD_MAGNITUDE": 1.3,
+        "ELEMENT_SEED_SIZE": 5,
+
+        // Young's modulus and Poisson's Ratio
+        "YOUNGS_MODULUS": 2410000,
+        "POISSONS_RATIO": 0.4,
+        "SIGMA": 65000,
+
+        // Temporary constant
+        "DEPTH": 50,
+        "OUTPUT_VARIABLE": [
+            "MISES",
+            "MISESMAX",
+            "U"
+        ],
+
+        // Genetic algorithm
+        "OUTPUT_FILE": "../result/output.json",
+        "OUTPUT_PHOTO_DIRECTORY": "../result/",
+        "CSV_FILE": "../data/profile.csv",
+        "INPUT_FILE": "../data/input.txt",
+        "ICON_FILE": "../asset/icon.ico",
+        "IS_LOADING": true,
+        "IS_LOGGING": false,
+        "GENERATION_SIZE": 3,
+        "POPULATION_SIZE": 5,
+        "SELECTION_RATE": 0.4,
+        "CALCULATE_MODE": "MULTITASK",
+        "CORE_SIZE": 3,
+        "RETRY_COUNT": 15,
+        "REST_PERIOR": 5,
+        "TIME_SLEEP": 3,
+        "MUTATION_MODE": "INTERSECT",
+        "MINOR_MUTATION_RATE": 0.9,
+        "MAJOR_MUTATION_RATE": 0.9,
+        "AMP_FACT": 2,
+        "OPERATORS": [
+            ">=",
+            "<=",
+            ">",
+            "<"
+        ],
+        "IS_ANIMATION": true,
+        "UNUSED_FILES": [
+            ".dat",
+            ".env",
+            ".inp",
+            ".ipm",
+            ".lck",
+            ".log",
+            ".com",
+            ".msg",
+            ".prt",
+            ".sim",
+            ".sta",
+            ".rec",
+            ".odb"
+        ]
+    }
+}
