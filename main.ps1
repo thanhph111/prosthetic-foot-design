@@ -1,6 +1,6 @@
 $FolderStructure = @(
     ".\asset\icon.ico"
-    ".\data\input.txt"
+    ".\data\input.json"
     ".\data\profile.csv"
     ".\src\ga.py"
     ".\src\sub\inputprocess.py"
@@ -94,7 +94,7 @@ function Test-DirectoryTree {
     foreach ($Path in $Paths) {
         if (!(Test-Path $Path)) {
             $Boolean = $false
-            Write-Warning "File doesn't exist: $Path
+            Write-Warning "File doesn't exist: '$Path'
             `rCheck again.`n`n"
         }
     }
@@ -108,15 +108,15 @@ function Test-Command {
         [hashtable]$Commands
     )
     foreach ($Command in $Commands.GetEnumerator()) {
-        if ((Get-Command $Command.Key -WarningAction SilentlyContinue) -eq $null) {
+        if ((Get-Command $Command.Key -ErrorAction SilentlyContinue) -eq $null) {
             $Boolean += @{ $Command.Key = $false}
-            Write-Warning "Path doesn't exist: $($Command.Key).
+            Write-Warning "Path doesn't exist: '$($Command.Key)'.
             `r$($Command.Value.Info).`n`n"
         }
         else {
             if ((Invoke-Expression $Command.Value.GetVersionCommand) -lt $Command.Value.RequiredVersion) {
                 $Boolean += @{ $Command.Key = $false}
-                Write-Warning "$($Command.Key) required at least version. $($Command.Value.RequiredVersion).`n`n"
+                Write-Warning "'$($Command.Key)' required at least version. $($Command.Value.RequiredVersion).`n`n"
             }
             else {
                 $Boolean += @{ $Command.Key = $true}
@@ -144,7 +144,7 @@ function Test-Package {
     foreach ($Package in $Packages) {
         if ($InstallPackages -notcontains $Package) {
             $Boolean = $false
-            Write-Warning "Package $Package missing.
+            Write-Warning "Package '$Package' missing.
             `rPlease install using pip or get into virtual environment.`n`n"
         }
     }
@@ -161,6 +161,10 @@ function Clean-Directory {
     $NameList | % { Get-ChildItem -Filter $_ -Recurse -Force | Remove-Item -Force -Recurse }
 }
 
+
+Write-Host "----------------------" -ForegroundColor Cyan
+Write-Host "PROSTHETIC FOOT DESIGN" -ForegroundColor Cyan
+Write-Host "----------------------" -ForegroundColor Cyan
 
 Write-Output "Checking neccessary files and softwares..."
 Start-Sleep 1

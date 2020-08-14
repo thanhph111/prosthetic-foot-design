@@ -173,8 +173,8 @@ def call(genes):
 
     points = Chromosome.genes_to_points(genes)
     output = subprocess.check_output(
-        # "py test/virtualkernel.py -- %s" % (points),
-        "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
+        "py test/virtualkernel.py -- %s" % (points),
+        # "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
         shell=True,
         universal_newlines=True,
     )
@@ -246,19 +246,22 @@ def multitask():
             if small_bool:
                 results.extend(temp)
 
-                print(COLORS["OKGREEN"], end="")
+                print(COLORS["WARNING"], end="")
                 print("COMPLETED:")
+                print(COLORS["ENDC"], end="")
+
                 print(
+                    f"  "
                     f"{'Generation:':<15}"
                     f"{len(data) + 1:03}"
                     f"{'/'}{CONS['GENERATION_SIZE']:03}"
                 )
                 print(
+                    f"  "
                     f"{'Chromosome:':<15}"
                     f"{order * CONS['CORE_SIZE'] + len(item):03}"
                     f"{'/'}{CONS['POPULATION_SIZE']:03}"
                 )
-                print(COLORS["ENDC"], end="")
 
                 clear_line(3)
                 break
@@ -273,16 +276,22 @@ def multitask():
 
 def self_recover():
     print(COLORS["WARNING"], end="")
-    print("Taking a break.")
-    print("Sleep", CONS["TIME_SLEEP"], "second.")
-    time.sleep(2 * CONS["TIME_SLEEP"] / 3)
-    print("Remove all unused files.")
-    remove_unnecessary_files()
-    time.sleep(CONS["TIME_SLEEP"] / 3)
-    print("Continue...")
+    print("TAKING A BREAK")
     print(COLORS["ENDC"], end="")
+
+    print("Sleep", CONS["TIME_SLEEP"], "second to finish all processes...")
+    time.sleep(CONS["TIME_SLEEP"])
+    clear_line()
+
+    print("Removing all unused files...")
+    remove_unnecessary_files()
     time.sleep(1)
-    clear_line(4)
+    clear_line()
+
+    print("Continue...")
+
+    # time.sleep(1)
+    clear_line(2)
 
 
 def initialization():
@@ -453,8 +462,7 @@ if __name__ == "__main__":
     index, objective, genes, constraints = genetic_algorithm()
     stop = timeit.default_timer()
 
-    print()
-    print(COLORS["HEADER"] + "RESULT:" + COLORS["ENDC"])
+    print(COLORS["WARNING"] + "RESULT:" + COLORS["ENDC"])
     # print(COLORS["OKBLUE"], end="")
     print(f"{'  Maximum objective:':<20}{objective:>12.3f}")
     print(f"{'  Its index:':<20}{index:>12}")
@@ -463,7 +471,6 @@ if __name__ == "__main__":
     # print("Its genes:")
     # print(beautifier(genes))
     # print(COLORS["ENDC"], end="")
-    print()
 
     values = [population[0].objective for population in data]
     plot.main(values, is_animation=False)
