@@ -173,15 +173,15 @@ def call(genes):
 
     points = Chromosome.genes_to_points(genes)
     output = subprocess.check_output(
-        "py test/virtualkernel.py -- %s" % (points),
-        # "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
+        # "py test/virtualkernel.py -- %s" % (points),
+        "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
         shell=True,
         universal_newlines=True,
     )
     return ast.literal_eval(output)
 
 
-def penalty(genes):
+def penalty(genes, result):
     """Calculate constraints from given expressions."""
 
     constraints = []
@@ -190,7 +190,10 @@ def penalty(genes):
         # TODO: Globalizing all genes may make memory exhausted, need to change
         globals()["x" + str(index)] = x_coordinate
         globals()["y" + str(index)] = y_coordinate
-    # globals()["p"] = polygon_perimeter(genes)
+    globals()["f"] = result["field_output"]
+    globals()["u1"] = result["history_output"][0]
+    globals()["u2"] = result["history_output"][1]
+    globals()["sigma"] = CONS["SIGMA"]
 
     for expressions in CONSTRAINTS:
         if eval(expressions):
@@ -271,7 +274,11 @@ def multitask():
                 exit()
     for chromosome, result in zip(population, results):
         chromosome.objective = result["objective"]
-        chromosome.constraints = penalty(chromosome.genes)  # TODO: Temporary
+        chromosome.constraints = penalty(chromosome.genes, result)
+        # print("gens:", chromosome.genes)
+        # print("constraints:", chromosome.constraints)
+        # print("result:", result)
+        # exit(0)
 
 
 def self_recover():
@@ -288,7 +295,7 @@ def self_recover():
     time.sleep(1)
     clear_line()
 
-    print("Continue...")
+    print("Continuing...")
 
     # time.sleep(1)
     clear_line(2)
@@ -464,10 +471,10 @@ if __name__ == "__main__":
 
     print(COLORS["WARNING"] + "RESULT:" + COLORS["ENDC"])
     # print(COLORS["OKBLUE"], end="")
-    print(f"{'  Maximum objective:':<20}{objective:>12.3f}")
-    print(f"{'  Its index:':<20}{index:>12}")
-    print(f"{'  Its constraints:':<20}{str(constraints):>12}")
-    print(f"{'  Running time:':<20}{(stop - start):>12.2f}")
+    print(f"{'  Maximum objective:':<20}{objective:>20.3f}")
+    print(f"{'  Its index:':<20}{index:>20}")
+    print(f"{'  Its constraints:':<20}{str(constraints):>20}")
+    print(f"{'  Running time:':<20}{(stop - start):>20.2f}")
     # print("Its genes:")
     # print(beautifier(genes))
     # print(COLORS["ENDC"], end="")

@@ -153,12 +153,16 @@
     },
     "CONSTRAINTS": [
         "x1 - x0 > 40",
-        "((x2 - x1)**2 + (y2 - y1)**2)**(1/2) < 50"
+        "((x2 - x1)**2 + (y2 - y1)**2)**(1/2) < 50",
+        "1.5 * f < sigma",
+        //"u1 > 3",
+        "u1 < 10",
+        "u2 < 7"
     ],
     "CONSTANTS": {
         // Abaqus
         "PLANAR_MODE": true,
-        "PHOTO_MODE": true,
+        "PHOTO_MODE": false,
         "PHOTO_TYPE": ".png",
         "LOAD_MAGNITUDE": 1.3,
         "ELEMENT_SEED_SIZE": 5,
@@ -183,12 +187,12 @@
         "INPUT_FILE": "../data/input.txt",
         "ICON_FILE": "../asset/icon.ico",
         "IS_LOADING": true,
-        "IS_LOGGING": false,
+        "IS_LOGGING": true,
         "GENERATION_SIZE": 7,
-        "POPULATION_SIZE": 7,
+        "POPULATION_SIZE": 10,
         "SELECTION_RATE": 0.4,
         "CALCULATE_MODE": "MULTITASK",
-        "CORE_SIZE": 3,
+        "CORE_SIZE": 5,
         "RETRY_COUNT": 15,
         "REST_PERIOR": 5,
         "TIME_SLEEP": 3,
