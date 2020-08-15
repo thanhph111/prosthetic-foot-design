@@ -162,7 +162,7 @@ def need_initialize():
     else:
         print("Old data is not found. Initialize new data.")
         answer = True
-    # time.sleep(1)
+    time.sleep(1)
     clear_line()
     return answer
 
@@ -173,8 +173,8 @@ def call(genes):
 
     points = Chromosome.genes_to_points(genes)
     output = subprocess.check_output(
-        # "py test/virtualkernel.py -- %s" % (points),
-        "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
+        "py test/virtualkernel.py -- %s" % (points),
+        # "abaqus cae noGUI=sub/kernel.py -- %s" % (points),
         shell=True,
         universal_newlines=True,
     )
@@ -450,8 +450,12 @@ def genetic_algorithm():
         mutation()
         fitness()
 
-        if len(data) % CONS["REST_PERIOR"] == 0:
-            self_recover()
+        if (
+            len(data) % CONS["REST_PERIOR"] == 0
+            and len(data) != CONS["GENERATION_SIZE"]
+        ):
+            # self_recover()
+            exit()
 
     objectives = [population[0].objective for population in data]
     objective = max(objectives)
@@ -471,10 +475,11 @@ if __name__ == "__main__":
 
     print(COLORS["WARNING"] + "RESULT:" + COLORS["ENDC"])
     # print(COLORS["OKBLUE"], end="")
-    print(f"{'  Maximum objective:':<20}{objective:>20.3f}")
-    print(f"{'  Its index:':<20}{index:>20}")
-    print(f"{'  Its constraints:':<20}{str(constraints):>20}")
-    print(f"{'  Running time:':<20}{(stop - start):>20.2f}")
+    print(f"{'  Maximum objective:':<21}{objective:<10.3f}")
+    print(f"{'  Its index:':<21}{index:<10}")
+    constraints = ["%.2f" % elem for elem in constraints]
+    print(f"{'  Its constraints:':<21}{str(constraints):<10}")
+    print(f"{'  Running time:':<21}{(stop - start):<10.2f}")
     # print("Its genes:")
     # print(beautifier(genes))
     # print(COLORS["ENDC"], end="")

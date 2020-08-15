@@ -162,6 +162,40 @@ function Clean-Directory {
 }
 
 
+function Call-Process {
+    python .\ga.py 2>..\result\error.log
+
+    # WARNING: Need IS_LOGGING is always true
+    if (Test-Path -Path ..\result\output.json) {
+        $OutputFileLength = (Get-Content -Raw -Path ..\result\output.json | ConvertFrom-Json)[1].Length
+    }
+    else {
+        $OutputFileLength = 0
+    }
+    $InputFile = (Get-Content -Raw -Path ..\data\input.json) -replace '(?m)(?<=^([^"]|"[^"]*")*)//.*' | ConvertFrom-Json
+    $GenerationSize = $InputFile.CONSTANTS.GENERATION_SIZE
+
+    if ($OutputFileLength -lt $GenerationSize) {
+        Write-Output "Let me take a break"
+        Start-Sleep 1
+        Clear-Line
+
+        Write-Output "Removing unnecessary files..."
+        Start-Sleep 1
+        Clean-Directory -NameList $UnusedFiles
+        Clear-Line
+
+        Write-Output "Continuing..."
+        Start-Sleep 1
+        Clear-Line
+
+        Call-Process
+    }
+    else {
+        Clean-Directory -NameList $UnusedFiles
+    }
+}
+
 Write-Host "----------------------" -ForegroundColor Cyan
 Write-Host "PROSTHETIC FOOT DESIGN" -ForegroundColor Cyan
 Write-Host "----------------------" -ForegroundColor Cyan
@@ -182,7 +216,6 @@ If ($Check -notcontains $false) {
 
     Push-Location .\src\
     python -m sub.translate
-    python .\ga.py 2>..\result\error.log
-    Clean-Directory -NameList $UnusedFiles
+    Call-Process
     Pop-Location
 }

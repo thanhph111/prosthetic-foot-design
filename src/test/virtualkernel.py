@@ -1,5 +1,6 @@
 import sys
 import ast
+import random
 
 
 def points_to_genes(points):
@@ -13,7 +14,11 @@ def polygon_area(coordinates):
     for i in range(0, len(coordinates) - 2, 2):
         area += coordinates[i] * coordinates[i + 3]
         area -= coordinates[i + 2] * coordinates[i + 1]
-    return {"objective": 0.5 * abs(area)}
+    return {
+        "objective": 0.5 * abs(area),
+        "field_output": random.uniform(3, 7) * 10000,
+        "history_output": [random.uniform(0, 10), random.uniform(-10, 0)],
+    }
 
 
 if __name__ == "__main__":
