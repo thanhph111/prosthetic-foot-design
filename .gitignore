@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Exclude everything in result folder
+result/*
+!result/.gitkeep
