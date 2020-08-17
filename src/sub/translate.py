@@ -3,8 +3,12 @@ and write to input .txt file.
 """
 
 import csv
-from sub.inputprocess import CSV_FILE
-from sub.inputprocess import INPUT_FILE
+import json
+import re
+
+
+CSV_FILE = "../data/profile.csv"
+INPUT_FILE = "../data/input.json"
 
 
 def _create_domains():
@@ -34,33 +38,46 @@ def _create_domains():
     # Sort the table by primary key (order) and then by secondary key (x/y)
     domains.sort(key=lambda x: (x[1], x[0]), reverse=False)
 
-    # Join every lines in table to strings
-    for index, value in enumerate(domains):
-        domains[index] = " ".join(
-            [value[0] + str(value[1]), str(value[2]), str(value[3])]
-        )
-
-    return domains
+    return [[domain[2], domain[3]] for domain in domains]
 
 
-def write_to_file(list):
+def translate_data(new_domains=_create_domains()):
     """Write the read table to input .txt file. No return."""
 
     with open(INPUT_FILE) as file:
-        input_lines = file.read().splitlines()
-    points_pos = input_lines.index("*POINTS")
-    rules_pos = input_lines.index("*RULES")
+        input = file.read().splitlines()
 
-    # Delete the previous data
-    del input_lines[(points_pos + 1) : rules_pos]
-    # Insert new data
-    list.append("")
-    input_lines[(points_pos + 1) : (points_pos + 1)] = list
+    with open(INPUT_FILE) as file:
+        string = file.read()
+        # Remove comment lines
+        string = re.sub(r"(^|\s+)//.*$", "", string, flags=re.MULTILINE)
+        old_domains = json.loads(string)["DOMAINS"]
+
+    # Check if old domain same size with the new one
+    if len(old_domains) != len(new_domains) or any(
+        len(x) != 2 for x in old_domains
+    ):
+        print("Old data structure is not match the new ones.")
+        exit()
+    else:
+        # Flatten lists
+        old_values = [item for elem in old_domains for item in elem]
+        new_values = [item for elem in new_domains for item in elem]
+        # Replace old values with new one in each line if match
+        index = 0
+        line = 0
+        while index < len(old_values) and line < len(input):
+            if re.match(rf"\s+{str(old_values[index])}", input[line]):
+                input[line] = input[line].replace(
+                    str(old_values[index]), str(new_values[index]), 1
+                )
+                index += 1
+            line += 1
 
     # Rewrite to the same input file
     with open(INPUT_FILE, "w") as file:
-        file.writelines("\n".join(input_lines))
+        file.writelines("\n".join(input))
 
 
 if __name__ == "__main__":
-    write_to_file(_create_domains())
+    translate_data()

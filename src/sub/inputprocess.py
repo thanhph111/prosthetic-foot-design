@@ -1,12 +1,18 @@
 import json
 import re
+from sub.translate import translate_data
+from sub.translate import INPUT_FILE
 
-FILE = "../data/input.json"
+# Read data in profile.csv and write to input.json
+translate_data()
 
-with open(FILE) as file:
+with open(INPUT_FILE) as file:
     string = "\n".join(file.read().splitlines())
-    result = json.loads(re.sub("//.*", "", string, flags=re.MULTILINE))
+    result = json.loads(
+        re.sub(r"(^|\s+)//.*$", "", string, flags=re.MULTILINE)
+    )
 
+# Public variables
 for key, value in result.items():
     globals()[key] = value
 
