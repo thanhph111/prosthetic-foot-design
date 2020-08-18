@@ -162,9 +162,9 @@
     "CONSTANTS": {
         // Abaqus
         "PLANAR_MODE": true,
-        "PHOTO_MODE": false,
+        "PHOTO_MODE": true,
         "PHOTO_TYPE": ".png",
-        "LOAD_MAGNITUDE": 1.3,
+        "LOAD_MAGNITUDE": 98,
         "ELEMENT_SEED_SIZE": 5,
 
         // Young's modulus and Poisson's Ratio
@@ -173,7 +173,7 @@
         "SIGMA": 65000,
 
         // Temporary constant
-        "DEPTH": 50,
+        "DEPTH": 70,
         "OUTPUT_VARIABLE": [
             "MISES",
             "MISESMAX",

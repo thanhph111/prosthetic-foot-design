@@ -256,7 +256,9 @@ def finite_element_analysis(
             rendition=ABC.COLOR, vpDecorations=ABC.OFF, vpBackground=ABC.OFF
         )
         ABQ.session.printToFile(
-            fileName=job_name, format=ABC.PNG, canvasObjects=(my_viewport,)
+            fileName=str(CONS["OUTPUT_PHOTO_DIRECTORY"]) + job_name,
+            format=ABC.PNG,
+            canvasObjects=(my_viewport,),
         )
 
     # Close output database and delete the model
