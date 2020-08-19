@@ -67,7 +67,7 @@ def translate_data(new_domains=_create_domains()):
         index = 0
         line = 0
         while index < len(old_values) and line < len(input):
-            if re.match(rf"\s+{str(old_values[index])}", input[line]):
+            if re.match(r"\s+%s" % str(old_values[index]), input[line]):
                 input[line] = input[line].replace(
                     str(old_values[index]), str(new_values[index]), 1
                 )
