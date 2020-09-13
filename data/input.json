@@ -183,7 +183,7 @@
         // Genetic algorithm
         "OUTPUT_FILE": "../result/output.json",
         "OUTPUT_PHOTO_DIRECTORY": "../result/",
-        "CSV_FILE": "../data/profile.csv",
+        "CSV_FILE": "../data/domains.csv",
         "INPUT_FILE": "../data/input.txt",
         "ICON_FILE": "../asset/icon.ico",
         "IS_LOADING": true,

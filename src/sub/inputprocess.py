@@ -1,10 +1,6 @@
 import json
 import re
-from sub.translate import translate_data
 from sub.translate import INPUT_FILE
-
-# Read data in profile.csv and write to input.json
-translate_data()
 
 with open(INPUT_FILE) as file:
     string = "\n".join(file.read().splitlines())

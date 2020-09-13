@@ -19,7 +19,7 @@ prosthetic-foot-design
 │   └───plot.py.bak
 ├───data
 │   ├───input.txt
-│   └───profile.csv
+│   └───domains.csv
 ├───LICENSE
 ├───main.ps1
 ├───odbstruct.json

@@ -7,7 +7,7 @@ import json
 import re
 
 
-CSV_FILE = "../data/profile.csv"
+CSV_FILE = "../data/domains.csv"
 INPUT_FILE = "../data/input.json"
 
 
