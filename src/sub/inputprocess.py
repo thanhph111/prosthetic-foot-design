@@ -1,12 +1,14 @@
 import json
 import re
+from sub.translate import INPUT_FILE
 
-FILE = "../data/input.json"
-
-with open(FILE) as file:
+with open(INPUT_FILE) as file:
     string = "\n".join(file.read().splitlines())
-    result = json.loads(re.sub("//.*", "", string, flags=re.MULTILINE))
+    result = json.loads(
+        re.sub(r"(^|\s+)//.*$", "", string, flags=re.MULTILINE)
+    )
 
+# Public variables
 for key, value in result.items():
     globals()[key] = value
 

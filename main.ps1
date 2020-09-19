@@ -1,7 +1,7 @@
 $FolderStructure = @(
     ".\asset\icon.ico"
     ".\data\input.json"
-    ".\data\profile.csv"
+    ".\data\domains.csv"
     ".\src\ga.py"
     ".\src\sub\inputprocess.py"
     ".\src\sub\kernel.py"
@@ -181,6 +181,7 @@ If ($Check -notcontains $false) {
     Clear-Line
 
     Push-Location .\src\
+    python -m sub.translate
     python .\ga.py 2>..\result\error.log
     Clean-Directory -NameList $UnusedFiles
     Pop-Location
