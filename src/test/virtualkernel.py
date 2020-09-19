@@ -7,17 +7,10 @@ def points_to_genes(points):
     return [gen for genes in points for gen in genes]
 
 
-def polygon_area(coordinates):
-    area = 0.0
-    coordinates = coordinates[:]
-    coordinates.extend([coordinates[0], coordinates[1]])
-    for i in range(0, len(coordinates) - 2, 2):
-        area += coordinates[i] * coordinates[i + 3]
-        area -= coordinates[i + 2] * coordinates[i + 1]
+def virtual_calculate(coordinates):
     return {
-        "objective": 0.5 * abs(area),
-        "field_output": random.uniform(3, 7) * 10000,
-        "history_output": [random.uniform(0, 10), random.uniform(-10, 0)],
+        "objective": random.uniform(0.5, 8),
+        "field_output": random.uniform(3, 7) * 10,
     }
 
 
@@ -44,4 +37,4 @@ if __name__ == "__main__":
             [83.1338504234908, 71.65940041608457],
             [116.8888742298014, 135.3959448675419],
         ]
-    print(polygon_area(points_to_genes(points)))
+    print(virtual_calculate(points_to_genes(points)))

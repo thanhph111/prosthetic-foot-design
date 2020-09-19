@@ -4,6 +4,7 @@
 # Standard library
 import os
 import json
+import math
 import matplotlib as maplot
 import matplotlib.pyplot as pyplot
 from datetime import datetime
@@ -26,7 +27,8 @@ def get_data():
 
 def get_objectives(data):
     """Get a list of all first chromosomes' objective values."""
-    objectives = [population[0]["objective"] for population in data]
+    objectives = [math.log(population[0]["objective"]) for population in data]
+    # objectives = [population[0]["objective"] for population in data]
     return objectives
 
 
@@ -119,7 +121,7 @@ def main(values, is_animation=False):
     maplot.rcParams["font.weight"] = 500
 
     # Set window title
-    fig = pyplot.figure(figsize=(12, 5))
+    fig = pyplot.figure(figsize=(10, 5))
     fig.canvas.set_window_title("Prosthetic Foot Design by Genetic Algorithm")
 
     # Set icon

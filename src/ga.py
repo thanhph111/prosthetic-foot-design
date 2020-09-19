@@ -54,6 +54,7 @@ class Chromosome:
         self.constraints = []
         self.objective = None
         self.fitness = None
+        self.result = None
 
     @staticmethod
     def domains_to_genes(domains=DOMAINS):
@@ -145,7 +146,9 @@ def loading():
             chromosome.constraints = old_chromosome["constraints"]
             chromosome.objective = old_chromosome["objective"]
             chromosome.fitness = old_chromosome["fitness"]
+            chromosome.result = old_chromosome["result"]
         data.append(population)
+    data = copy.deepcopy(data)
 
 
 def need_initialize():
@@ -191,8 +194,6 @@ def penalty(genes, result):
         globals()["x" + str(index)] = x_coordinate
         globals()["y" + str(index)] = y_coordinate
     globals()["f"] = result["field_output"]
-    globals()["u1"] = result["history_output"][0]
-    globals()["u2"] = result["history_output"][1]
     globals()["sigma"] = CONS["SIGMA"]
 
     for expressions in CONSTRAINTS:
@@ -216,13 +217,29 @@ def singletask():
     global population
     for order, chromosome in enumerate(population):
         result = call(chromosome.genes)
-        chromosome.objective = result["objective"]
-        chromosome.constraints = penalty(chromosome.genes)  # TODO: Temporary
-        # print(result)
-        print(
-            "Done with chromosome %s, generation %s." % (order + 1, len(data))
+        chromosome.result = result
+        chromosome.objective = 1 / (
+            (CONS["LOAD_MAGNITUDE"] / result["objective"]) - CONS["STIFFNESS"]
         )
-        clear_line()
+        chromosome.constraints = penalty(chromosome.genes, result)
+        print(COLORS["WARNING"], end="")
+        print("COMPLETED:")
+        print(COLORS["ENDC"], end="")
+
+        print(
+            f"  "
+            f"{'Generation:':<13}"
+            f"{len(data) + 1:03}"
+            f"{'/'}{CONS['GENERATION_SIZE']:03}"
+        )
+        print(
+            f"  "
+            f"{'Chromosome:':<13}"
+            f"{order:03}"
+            f"{'/'}{CONS['POPULATION_SIZE']:03}"
+        )
+
+        clear_line(3)
 
 
 def multitask():
@@ -255,13 +272,13 @@ def multitask():
 
                 print(
                     f"  "
-                    f"{'Generation:':<15}"
+                    f"{'Generation:':<13}"
                     f"{len(data) + 1:03}"
                     f"{'/'}{CONS['GENERATION_SIZE']:03}"
                 )
                 print(
                     f"  "
-                    f"{'Chromosome:':<15}"
+                    f"{'Chromosome:':<13}"
                     f"{order * CONS['CORE_SIZE'] + len(item):03}"
                     f"{'/'}{CONS['POPULATION_SIZE']:03}"
                 )
@@ -273,7 +290,11 @@ def multitask():
                 print(item)
                 exit()
     for chromosome, result in zip(population, results):
-        chromosome.objective = result["objective"]
+        chromosome.result = result
+        chromosome.objective = 1 / abs(
+            (CONS["LOAD_MAGNITUDE"] / result["objective"]) - CONS["STIFFNESS"]
+        )
+
         chromosome.constraints = penalty(chromosome.genes, result)
         # print("gens:", chromosome.genes)
         # print("constraints:", chromosome.constraints)
@@ -320,17 +341,29 @@ def fitness():
         exit()
 
     # Find the minimum objective of valid chromosomes
-    valid_chromosomes = []
+    valid_objectives = []
     for chromosome in population:
         if all(x == 0 for x in chromosome.constraints):
-            valid_chromosomes.append(chromosome.objective)
-    min_objective = min(valid_chromosomes) if valid_chromosomes else 0
+            valid_objectives.append(chromosome.objective)
+    min_valid_objective = min(valid_objectives) if valid_objectives else 0
+
+    # Find the maximum objective of invalid chromosomes
+    invalid_objectives = [
+        chromosome.objective
+        for chromosome in population
+        if chromosome.objective not in valid_objectives
+    ]
+    max_invalid_objective = (
+        max(invalid_objectives) if invalid_objectives else 0
+    )
 
     # Calculate every fitnesses
     for chromosome in population:
-        chromosome.fitness = chromosome.objective - CONS["AMP_FACT"] * abs(
-            chromosome.objective - min_objective
-        ) * sum(chromosome.constraints)
+        chromosome.fitness = chromosome.objective - (
+            CONS["AMP_FACT"]
+            * abs(max_invalid_objective - min_valid_objective)
+            * sum(chromosome.constraints)
+        )
 
     # Ranking
     max_fitness = max([chromosome.fitness for chromosome in population])
@@ -462,15 +495,16 @@ def genetic_algorithm():
     index = objectives.index(objective)
     genes = data[index][0].genes
     constraints = data[index][0].constraints
+    result = data[index][0].result
 
-    return index, objective, genes, constraints
+    return index, objective, genes, constraints, result
 
 
 if __name__ == "__main__":
     import timeit
 
     start = timeit.default_timer()
-    index, objective, genes, constraints = genetic_algorithm()
+    index, objective, genes, constraints, result = genetic_algorithm()
     stop = timeit.default_timer()
 
     print(COLORS["WARNING"] + "RESULT:" + COLORS["ENDC"])
@@ -479,6 +513,7 @@ if __name__ == "__main__":
     print(f"{'  Its index:':<21}{index:<10}")
     constraints = ["%.2f" % elem for elem in constraints]
     print(f"{'  Its constraints:':<21}{str(constraints):<10}")
+    print(f"{'  Its result:':<21}{str(result):<10}")
     print(f"{'  Running time:':<21}{(stop - start):<10.2f}")
     # print("Its genes:")
     # print(beautifier(genes))

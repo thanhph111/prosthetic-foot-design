@@ -37,11 +37,11 @@ OUTPUT_VARIABLE_TUPLE = tuple(
 )
 
 
-def _print_(string):
+def _print_(*string):
     """Print a string to command prompt if running scrip within abaqus cae.
     Return nothing
     """
-    print(string, file=sys.__stdout__)
+    print(*string, file=sys.__stdout__)
 
 
 def remove_unnecessary_files(file_name):
@@ -99,17 +99,14 @@ def finite_element_analysis(
     )
 
     # Create section
+    my_model.HomogeneousSolidSection(
+        name="FootSection", material="POM", thickness=None
+    )
     if is_planar:
-        my_model.HomogeneousSolidSection(
-            name="FootSection", material="POM", thickness=None
-        )
         my_part.SectionAssignment(
             region=(my_part.faces,), sectionName="FootSection"
         )
     else:
-        my_model.HomogeneousSolidSection(
-            name="FootSection", material="POM", thickness=1.0
-        )
         my_part.SectionAssignment(
             region=(my_part.cells,), sectionName="FootSection"
         )
@@ -163,11 +160,12 @@ def finite_element_analysis(
         )
         # Apply load
         loaded_edge = my_instance.edges.findAt((loaded_edge_center,))
+        length = my_part.getLength(edges=loaded_edge)
         my_model.Pressure(
             name="Loaded",
             createStepName="LoadStep",
             region=((loaded_edge, ABC.SIDE1),),
-            magnitude=CONS["LOAD_MAGNITUDE"],
+            magnitude=CONS["LOAD_MAGNITUDE"] / (length * CONS["DEPTH"]),
         )
     else:
         # Fix face and apply load
@@ -188,11 +186,12 @@ def finite_element_analysis(
         )
         # Apply load
         loaded_face = my_instance.faces.findAt((loaded_face_center,))
+        area = my_part.getArea(faces=loaded_face)
         my_model.Pressure(
             name="Loaded",
             createStepName="LoadStep",
             region=((loaded_face, ABC.SIDE1),),
-            magnitude=CONS["LOAD_MAGNITUDE"],
+            magnitude=CONS["LOAD_MAGNITUDE"] / area,
         )
 
     # Mesh the instance
@@ -226,11 +225,7 @@ def finite_element_analysis(
         for value in history_region.historyOutputs.values()[:2]
     ]
 
-    if is_planar:
-        # Get the area
-        objective = my_part.getArea(faces=my_part.faces)
-    else:
-        objective = my_part.getVolume(cells=my_part.cells)
+    objective = (history_output[0] ** 2 + history_output[1] ** 2) ** (0.5)
 
     # Print result photo, just for Mises
     if print_photo:
@@ -257,7 +252,8 @@ def finite_element_analysis(
         )
         ABQ.session.printToFile(
             fileName=str(CONS["OUTPUT_PHOTO_DIRECTORY"]) + job_name,
-            format=ABC.PNG,
+            # format=ABC.PNG,
+            format=ABC.SVG,
             canvasObjects=(my_viewport,),
         )
 
@@ -271,7 +267,6 @@ def finite_element_analysis(
     return {
         "objective": objective,
         "field_output": field_output,
-        "history_output": history_output,
     }
 
 

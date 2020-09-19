@@ -15,36 +15,36 @@
             157.9064
         ],
         [
-            151.042,
-            160.551
+            153.9723,
+            163.4813
         ],
         [
-            150.6492,
-            157.6401
+            150.6533,
+            157.6442
         ],
         [
-            150.0803,
-            161.0649
+            153.3215,
+            164.8584
         ],
         [
-            124.6148,
-            134.2819
+            124.6695,
+            134.3025
         ],
         [
-            105.0542,
-            121.9666
+            106.0282,
+            122.9406
         ],
         [
-            77.3797,
-            89.5325
+            87.8951,
+            100.0479
         ],
         [
-            123.6836,
-            134.5858
+            129.6788,
+            152.0574
         ],
         [
-            32.462,
-            45.1735
+            32.416,
+            46.8181
         ],
         [
             309.6504,
@@ -67,24 +67,24 @@
             65.4835
         ],
         [
-            6.2724,
-            17.168
+            7.8963,
+            14.2501
         ],
         [
-            61.1742,
-            73.7537
+            54.7592,
+            67.3387
         ],
         [
-            21.5564,
-            30.9154
+            21.8288,
+            31.1878
         ],
         [
-            105.359,
-            114.8635
+            97.9337,
+            112.6436
         ],
         [
-            24.6017,
-            36.7545
+            21.081,
+            33.0558
         ],
         [
             76.3295,
@@ -95,12 +95,12 @@
             71.6954
         ],
         [
-            107.6168,
-            121.9896
+            109.8391,
+            119.1149
         ],
         [
-            132.0045,
-            139.2139
+            132.0305,
+            139.2398
         ]
     ],
     "RULES": {
@@ -152,31 +152,42 @@
         ]
     },
     "CONSTRAINTS": [
-        "x1 - x0 > 40",
-        "((x2 - x1)**2 + (y2 - y1)**2)**(1/2) < 50",
-        "1.5 * f < sigma",
-        //"u1 > 3",
-        "u1 < 10",
-        "u2 > -7"
+        // Distance conditions
+        "((x1 - x0)**2 + (y1 - y0)**2)**(1/2) > 30",
+        "((x1 - x0)**2 + (y1 - y0)**2)**(1/2) < 40",
+        "((x7 - x6)**2 + (y7 - y6)**2)**(1/2) > 245",
+        "((x7 - x6)**2 + (y7 - y6)**2)**(1/2) < 258",
+        // Align conditions
+        "abs(y0 - y1) < 5",
+        "abs(x1 - x2) < 5",
+        "abs(y6 - y7) < 5",
+        "abs(y8 - y9) < 5",
+        "x8 >= x7",
+        "y4 > y5 + 5",
+        // Distance from point 1 to line of point 7 and point 8
+        "(y0-y7-(y6-y7)*(x0-x7)/(x6-x7))/((1+((y6-y7)/(x6-x7))**2))**(1/2)>128",
+        "(y0-y7-(y6-y7)*(x0-x7)/(x6-x7))/((1+((y6-y7)/(x6-x7))**2))**(1/2)<138",
+        // Destructive condition
+        "2 * f < sigma"
     ],
     "CONSTANTS": {
         // Abaqus
         "PLANAR_MODE": true,
         "PHOTO_MODE": true,
-        "PHOTO_TYPE": ".png",
-        "LOAD_MAGNITUDE": 98,
+        "PHOTO_TYPE": ".svg",
+        "LOAD_MAGNITUDE": 800,
         "ELEMENT_SEED_SIZE": 5,
+        "STIFFNESS": 175,
 
         // Young's modulus and Poisson's Ratio
-        "YOUNGS_MODULUS": 2410000,
+        "YOUNGS_MODULUS": 2410,
         "POISSONS_RATIO": 0.4,
-        "SIGMA": 65000,
+        "SIGMA": 65,
 
         // Temporary constant
         "DEPTH": 70,
         "OUTPUT_VARIABLE": [
             "MISES",
-            "MISESMAX",
             "U"
         ],
 
@@ -188,17 +199,17 @@
         "ICON_FILE": "../asset/icon.ico",
         "IS_LOADING": true,
         "IS_LOGGING": true,
-        "GENERATION_SIZE": 10,
-        "POPULATION_SIZE": 20,
-        "SELECTION_RATE": 0.4,
+        "GENERATION_SIZE": 70,
+        "POPULATION_SIZE": 60,
+        "SELECTION_RATE": 0.3,
         "CALCULATE_MODE": "MULTITASK",
-        "CORE_SIZE": 5,
+        "CORE_SIZE": 10,
         "RETRY_COUNT": 15,
         "REST_PERIOR": 5,
-        "TIME_SLEEP": 3,
+        "TIME_SLEEP": 10,
         "MUTATION_MODE": "INTERSECT",
-        "MINOR_MUTATION_RATE": 0.9,
-        "MAJOR_MUTATION_RATE": 0.9,
+        "MINOR_MUTATION_RATE": 0.6,
+        "MAJOR_MUTATION_RATE": 0.5,
         "AMP_FACT": 2,
         "OPERATORS": [
             ">=",
